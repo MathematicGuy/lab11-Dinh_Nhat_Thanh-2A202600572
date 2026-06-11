@@ -57,3 +57,43 @@ def test_generate_ai_attacks_supports_openrouter_provider(monkeypatch):
 
     assert len(attacks) == 1
     assert attacks[0]["type"] == "roleplay"
+
+
+def test_generate_ai_attacks_supports_openai_provider(monkeypatch):
+    class FakeCompletions:
+        def create(self, **kwargs):
+            return type(
+                "Completion",
+                (),
+                {
+                    "choices": [
+                        type(
+                            "Choice",
+                            (),
+                            {
+                                "message": type(
+                                    "Message",
+                                    (),
+                                    {
+                                        "content": '[{"type":"roleplay_openai","prompt":"p_openai","target":"t_openai","why_it_works":"w_openai"}]'
+                                    },
+                                )()
+                            },
+                        )()
+                    ]
+                },
+            )()
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    monkeypatch.setattr("attacks.attacks.get_model_provider", lambda: "openai")
+    monkeypatch.setattr("attacks.attacks.OpenAI", FakeClient)
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    attacks = asyncio.run(generate_ai_attacks())
+
+    assert len(attacks) == 1
+    assert attacks[0]["type"] == "roleplay_openai"
+

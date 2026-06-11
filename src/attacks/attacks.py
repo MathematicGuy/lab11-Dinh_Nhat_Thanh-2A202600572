@@ -196,7 +196,25 @@ async def generate_ai_attacks() -> list:
         List of attack dicts with type, prompt, target, why_it_works
     """
     provider = get_model_provider()
-    if provider == "google":
+    if provider == "openai":
+        client = OpenAI(
+            api_key=os.environ["OPENAI_API_KEY"],
+        )
+        model_name = os.environ.get("MODEL_ID", "gpt-5.4-nano").strip()
+        try:
+            completion = client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": RED_TEAM_PROMPT}],
+            )
+            text = completion.choices[0].message.content or ""
+        except Exception as e:
+            print(f"Failed to generate attacks using {model_name} ({e}). Falling back to gpt-4o-mini.")
+            completion = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": RED_TEAM_PROMPT}],
+            )
+            text = completion.choices[0].message.content or ""
+    elif provider == "google":
         client = genai.Client()
         text = client.models.generate_content(
             model=GOOGLE_MODEL_NAME,
@@ -213,7 +231,7 @@ async def generate_ai_attacks() -> list:
         )
         text = completion.choices[0].message.content or ""
     else:
-        print("No GOOGLE_API_KEY or OPENROUTER_API_KEY available for AI attack generation.")
+        print("No OPENAI_API_KEY, GOOGLE_API_KEY, or OPENROUTER_API_KEY available for AI attack generation.")
         return []
 
     print("AI-Generated Attack Prompts (Aggressive):")

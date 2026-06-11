@@ -4,6 +4,7 @@ import main
 
 
 def test_part2_guardrails_skips_nemo_and_runs_local_checks(monkeypatch, capsys):
+    monkeypatch.setattr("guardrails.nemo_guardrails.NEMO_AVAILABLE", False)
     calls = []
 
     monkeypatch.setattr(

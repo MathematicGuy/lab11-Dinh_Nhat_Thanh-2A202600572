@@ -67,7 +67,12 @@ async def part2_guardrails():
 
     # Part 2C: NeMo Guardrails
     print("\n--- Part 2C: NeMo Guardrails ---")
-    print("Skipping Part 2C: nemoguardrails is disabled in this repo due to library errors.")
+    from guardrails.nemo_guardrails import init_nemo, test_nemo_guardrails, NEMO_AVAILABLE
+    if not NEMO_AVAILABLE:
+        print("Skipping Part 2C: nemoguardrails is disabled in this repo due to library errors.")
+    else:
+        init_nemo()
+        await test_nemo_guardrails()
 
 
 async def part3_testing():
@@ -156,6 +161,22 @@ async def main(parts=None):
     print("=" * 60)
 
 
+class StdoutCapture:
+    def __init__(self):
+        self.terminal = sys.stdout
+        self.log = []
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.append(message)
+
+    def flush(self):
+        self.terminal.flush()
+
+    def get_text(self):
+        return "".join(self.log)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Lab 11: Guardrails, HITL & Responsible AI"
@@ -166,7 +187,24 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if args.part:
-        asyncio.run(main(parts=[args.part]))
-    else:
-        asyncio.run(main())
+    # Configure stdout to use UTF-8 to prevent charmap errors on Windows consoles
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+
+    capture = StdoutCapture()
+    sys.stdout = capture
+
+    try:
+        if args.part:
+            asyncio.run(main(parts=[args.part]))
+        else:
+            asyncio.run(main())
+    finally:
+        sys.stdout = capture.terminal
+        import json
+        output_text = capture.get_text()
+        with open("results.json", "w", encoding="utf-8") as f:
+            json.dump({"output": output_text}, f, indent=2, ensure_ascii=False)

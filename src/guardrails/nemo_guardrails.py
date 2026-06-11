@@ -3,6 +3,19 @@ Lab 11 — Part 2C: NeMo Guardrails
   TODO 9: Define Colang rules for banking safety
 """
 import textwrap
+import sys
+
+# Ensure UTF-8 output encoding to prevent CP1252/charmap errors on Windows
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 try:
     from nemoguardrails import RailsConfig, LLMRails
@@ -10,8 +23,6 @@ try:
 except ImportError:
     NEMO_AVAILABLE = False
     print("NeMo Guardrails not installed. Run: pip install nemoguardrails>=0.10.0")
-
-
 # ============================================================
 # NeMo YAML config — model and rails settings
 # ============================================================
@@ -19,17 +30,8 @@ except ImportError:
 NEMO_YAML_CONFIG = textwrap.dedent("""\
     models:
       - type: main
-        engine: google
-        model: gemini-2.5-flash-lite
-
-    rails:
-      input:
-        flows:
-          - check user message
-
-      output:
-        flows:
-          - check bot response
+        engine: openai
+        model: gpt-4o-mini
 """)
 
 

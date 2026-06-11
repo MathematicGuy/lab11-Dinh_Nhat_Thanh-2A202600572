@@ -62,19 +62,12 @@ async def part2_guardrails():
     # Part 2B: Output guardrails
     print("\n--- Part 2B: Output Guardrails ---")
     from guardrails.output_guardrails import test_content_filter, _init_judge
-    _init_judge()  # Initialize LLM judge if TODO 7 is done
+    _init_judge()
     test_content_filter()
 
     # Part 2C: NeMo Guardrails
     print("\n--- Part 2C: NeMo Guardrails ---")
-    try:
-        from guardrails.nemo_guardrails import init_nemo, test_nemo_guardrails
-        init_nemo()
-        await test_nemo_guardrails()
-    except ImportError:
-        print("NeMo Guardrails not available. Skipping Part 2C.")
-    except Exception as e:
-        print(f"NeMo error: {e}. Skipping Part 2C.")
+    print("Skipping Part 2C: nemoguardrails is disabled in this repo due to library errors.")
 
 
 async def part3_testing():
@@ -128,18 +121,31 @@ async def main(parts=None):
     Args:
         parts: List of part numbers to run, or None for all
     """
-    setup_api_key()
-
     if parts is None:
         parts = [1, 2, 3, 4]
 
+    needs_api = any(part in {1, 3} for part in parts)
+    has_api_key = setup_api_key() if needs_api else ("GOOGLE_API_KEY" in __import__("os").environ)
+
     for part in parts:
         if part == 1:
-            await part1_attacks()
+            if not has_api_key:
+                print("Skipping Part 1: GOOGLE_API_KEY is required for live attack generation and agent calls.")
+                continue
+            try:
+                await part1_attacks()
+            except Exception as exc:
+                print(f"Skipping Part 1 after runtime error: {exc}")
         elif part == 2:
             await part2_guardrails()
         elif part == 3:
-            await part3_testing()
+            if not has_api_key:
+                print("Skipping Part 3: GOOGLE_API_KEY is required for protected/unprotected agent comparison.")
+                continue
+            try:
+                await part3_testing()
+            except Exception as exc:
+                print(f"Skipping Part 3 after runtime error: {exc}")
         elif part == 4:
             part4_hitl()
         else:

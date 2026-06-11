@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HITL Threshold Matrix</title>
+  <style>
+    :root {
+      --bg: #f5efe6;
+      --paper: #fffdfa;
+      --ink: #1d2932;
+      --muted: #5c6972;
+      --line: #d8cfbf;
+      --accent: #9d3b2c;
+      --soft: #efe5d4;
+    }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f8f3ea, #f2ede4);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    main {
+      max-width: 960px;
+      margin: 30px auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      padding: 32px;
+      box-shadow: 0 12px 28px rgba(29, 41, 50, 0.08);
+    }
+    h1, h2 { margin: 0 0 12px; line-height: 1.1; }
+    p, li, th, td { font-size: 16px; line-height: 1.55; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--soft); }
+    .note {
+      border-left: 4px solid var(--accent);
+      background: #fbf3ed;
+      padding: 12px 14px;
+      margin: 18px 0;
+    }
+    code {
+      font-family: Consolas, monospace;
+      background: #f4eee2;
+      padding: 1px 4px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>HITL Threshold Matrix</h1>
+    <p>Use this reference when implementing <code>src/hitl/hitl.py</code> or explaining why a banking workflow must escalate.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Scenario type</th>
+          <th>Confidence</th>
+          <th>Business risk</th>
+          <th>Route</th>
+          <th>Human model</th>
+          <th>Reviewer context needed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>General FAQ</td>
+          <td>&gt;= 0.90</td>
+          <td>Low</td>
+          <td><strong>auto_send</strong></td>
+          <td>None</td>
+          <td>Not needed unless later audit flags anomaly</td>
+        </tr>
+        <tr>
+          <td>General request with uncertainty</td>
+          <td>0.70 to 0.89</td>
+          <td>Low to medium</td>
+          <td><strong>queue_review</strong></td>
+          <td>Human-on-the-loop</td>
+          <td>User query, draft answer, confidence, rule/judge flags</td>
+        </tr>
+        <tr>
+          <td>Ambiguous or weak answer</td>
+          <td>&lt; 0.70</td>
+          <td>Medium</td>
+          <td><strong>escalate</strong></td>
+          <td>Human-in-the-loop</td>
+          <td>User query, draft answer, missing evidence, safety concerns</td>
+        </tr>
+        <tr>
+          <td>Money transfer, password change, account closure, personal-info update</td>
+          <td>Any</td>
+          <td>High</td>
+          <td><strong>escalate</strong></td>
+          <td>Human-in-the-loop</td>
+          <td>Identity context, transaction details, amount, destination, prior activity</td>
+        </tr>
+        <tr>
+          <td>Fraud dispute or suspicious-activity complaint</td>
+          <td>Any</td>
+          <td>High</td>
+          <td><strong>escalate</strong></td>
+          <td>Human-as-tiebreaker or human-in-the-loop</td>
+          <td>Claim summary, account events, timestamps, anomaly markers</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Rule:</strong> confidence thresholds are not enough. In banking, <strong>business risk overrides confidence</strong>. A model can be very confident and still should not approve a high-risk action.
+    </div>
+  </main>
+</body>
+</html>

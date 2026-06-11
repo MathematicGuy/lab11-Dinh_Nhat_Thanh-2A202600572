@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pipeline Assembly Checklist</title>
+  <style>
+    :root {
+      --paper: #fffdfa;
+      --ink: #1a2630;
+      --line: #d8cfbf;
+      --accent: #9e3b2d;
+      --soft: #efe5d4;
+    }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f8f3ea, #f2ede4);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    main {
+      max-width: 940px;
+      margin: 30px auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      padding: 32px;
+      box-shadow: 0 12px 28px rgba(26, 38, 48, 0.08);
+    }
+    h1, h2 { margin: 0 0 12px; line-height: 1.1; }
+    p, li, th, td { font-size: 16px; line-height: 1.55; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--soft); }
+    code {
+      font-family: Consolas, monospace;
+      background: #f4eee2;
+      padding: 1px 4px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Pipeline Assembly Checklist</h1>
+    <p>Use this as the build-order cheat sheet for the ADK-first assignment pipeline.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>What to implement</th>
+          <th>Where it fits</th>
+          <th>What to show in notebook/report</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Rate limiting</td>
+          <td>Before input rails</td>
+          <td>First 10 pass, last 5 block, wait-time message</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Input guardrails</td>
+          <td>Before LLM</td>
+          <td>Which attacks were blocked and which pattern matched</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Main LLM response</td>
+          <td>After safe input passes</td>
+          <td>Normal safe-query behavior</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>Output redaction + LLM judge</td>
+          <td>Before response release</td>
+          <td>Before/after redaction and judge verdicts</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>Audit logging</td>
+          <td>Around the full request lifecycle</td>
+          <td>Exported JSON with input/output/layer/latency</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>Monitoring and alerts</td>
+          <td>After batch runs or live traffic summaries</td>
+          <td>Block rate, leak rate, judge fail rate, alert thresholds</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Recommended plugin order</h2>
+    <ol>
+      <li><code>RateLimitPlugin</code></li>
+      <li><code>InputGuardrailPlugin</code></li>
+      <li>Main protected banking agent</li>
+      <li><code>OutputGuardrailPlugin</code></li>
+      <li><code>AuditLogPlugin</code></li>
+    </ol>
+  </main>
+</body>
+</html>

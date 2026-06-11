@@ -81,6 +81,118 @@ You must implement **at least 4 independent safety layers** plus audit/monitorin
 
 Each layer should catch something the others miss.
 
+## Recommended ADK-First Implementation Plan
+
+If you want the fastest path to a strong submission in this repo, use the existing **Google ADK plugin architecture** instead of switching frameworks. The current lab already separates input guardrails, output guardrails, testing, and HITL into modules, so the assignment can be completed by extending those pieces into one production-style pipeline.
+
+### Recommended architecture in this repo
+
+Use one protected pipeline with this order:
+
+1. **Rate Limiter**
+2. **Input Guardrails**
+3. **LLM (Gemini / protected banking agent)**
+4. **Output Guardrails**
+5. **Audit Log**
+6. **Monitoring & Alerts**
+
+This order matters:
+
+- **Rate limiter first** blocks abusive traffic before you pay model cost
+- **Input guardrails second** block obvious attacks before generation
+- **Output guardrails after generation** catch leaks and unsafe completions that only appear in the final text
+- **Audit and monitoring last** give you evidence for the notebook and report
+
+### How to map the assignment to the current codebase
+
+| Assignment requirement | Recommended repo location | What to build |
+|---|---|---|
+| Rate Limiter | New ADK plugin | Sliding-window, per-user request blocking with wait time |
+| Input Guardrails | `src/guardrails/input_guardrails.py` | Finish injection detection, topic filter, and blocking plugin |
+| Output Guardrails | `src/guardrails/output_guardrails.py` | Finish content redaction and output blocking |
+| LLM-as-Judge | `src/guardrails/output_guardrails.py` | Add/enable a separate judge agent for semantic safety review |
+| Audit Log | New ADK plugin or helper | Record input, output, blocking layer, and latency |
+| Monitoring & Alerts | New helper plus `src/testing/testing.py` | Summarize block rate, leak rate, judge fail rate, and alert conditions |
+| HITL / Confidence Routing | `src/hitl/hitl.py` | Finish routing logic and define 3 real banking escalation points |
+| Before/after testing pipeline | `src/testing/testing.py` | Extend batch testing and metrics reporting |
+
+### Recommended build order
+
+Build in this order so every step is testable:
+
+1. Finish the current lab TODOs in:
+   - `src/guardrails/input_guardrails.py`
+   - `src/guardrails/output_guardrails.py`
+   - `src/testing/testing.py`
+   - `src/hitl/hitl.py`
+2. Add a **RateLimitPlugin**
+3. Add an **AuditLogPlugin**
+4. Add a **MonitoringAlert** helper
+5. Assemble one **production plugin list**
+6. Run the 4 required test suites from this assignment
+7. Export evidence for your report:
+   - first-catching layer per attack
+   - false positives on safe queries
+   - leak/block metrics
+   - latency and operational tradeoffs
+
+### Recommended production plugin list
+
+```python
+production_plugins = [
+    RateLimitPlugin(max_requests=10, window_seconds=60),
+    InputGuardrailPlugin(),
+    OutputGuardrailPlugin(use_llm_judge=True),
+    AuditLogPlugin(),
+]
+```
+
+Then create the protected agent with:
+
+```python
+agent, runner = create_protected_agent(plugins=production_plugins)
+```
+
+You can keep **Monitoring & Alerts** as a separate helper that reads plugin counters and batch test results rather than forcing it into an ADK callback.
+
+### What your notebook should explicitly show
+
+To maximize assignment points, show evidence, not just code:
+
+- **Safe queries**: demonstrate they pass
+- **Attack queries**: demonstrate they are blocked and identify the first blocking layer
+- **Rate limiting**: show first 10 requests pass, next 5 block
+- **Edge cases**: explain what happened and why
+- **Output guardrails**: show before vs after redaction
+- **LLM-as-Judge**: show verdict output and failure reasons
+- **Audit log**: export JSON and show at least one sample record
+- **Monitoring**: show block rate, leak rate, and any alert threshold you define
+
+### What each layer should catch first
+
+Use this mental model while building and while writing your report:
+
+- **Rate limiter** catches burst abuse
+- **Input guardrails** catch explicit prompt injection, off-topic queries, and obvious dangerous requests
+- **Output guardrails** catch leaked secrets, PII, and unsafe completions
+- **LLM-as-Judge** catches nuanced unsafe or low-quality outputs that rules alone may miss
+- **HITL** catches high-risk or low-confidence cases where the model should not have final authority
+
+### Recommended report strategy
+
+When writing Part B, build your tables directly from observed runs:
+
+- For each attack prompt, record the **first layer that blocked it**
+- For safe queries, record any **false positives** and explain the tradeoff
+- For gap analysis, invent 3 bypass prompts and state **which missing layer** would catch them
+- For production readiness, discuss:
+  - how many model calls happen per request
+  - where latency grows
+  - which checks should stay cheap and deterministic
+  - which cases justify HITL
+
+This approach keeps the assignment grounded in the Day-11 repo instead of becoming a generic safety essay.
+
 ---
 
 ## Testing Requirements

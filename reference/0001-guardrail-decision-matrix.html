@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guardrail Decision Matrix</title>
+  <style>
+    :root {
+      --bg: #f6f3eb;
+      --paper: #fffdf8;
+      --ink: #1d2a33;
+      --muted: #57646f;
+      --line: #d7cfbf;
+      --accent: #a33a2b;
+      --accent-2: #1f6a5b;
+      --soft: #efe6d4;
+    }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, #efe3c8 0, transparent 28%),
+        linear-gradient(180deg, #f7f2e8, #f2eee6);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    main {
+      max-width: 980px;
+      margin: 32px auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: 0 12px 30px rgba(29, 42, 51, 0.08);
+      padding: 32px;
+    }
+    h1, h2 {
+      line-height: 1.1;
+      margin: 0 0 12px;
+    }
+    p, li, td, th {
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    .lede {
+      color: var(--muted);
+      max-width: 70ch;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      vertical-align: top;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: var(--soft);
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 13px;
+      margin-right: 6px;
+      background: #efe3c8;
+    }
+    .fast { background: #e3f1ec; color: #184f44; }
+    .slow { background: #f8dfd8; color: #8b2c20; }
+    .note {
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      background: #fbf4ee;
+      margin: 18px 0;
+    }
+    a { color: var(--accent); }
+    code {
+      font-family: Consolas, monospace;
+      background: #f4eee2;
+      padding: 1px 4px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Guardrail Decision Matrix</h1>
+    <p class="lede">Quick reference for the Day-11 banking agent: which layer should catch which kind of risk, what signal it uses, and what latency price you pay.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Best for catching</th>
+          <th>Typical signal</th>
+          <th>Latency profile</th>
+          <th>Failure if overused</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Input rail</strong></td>
+          <td>Direct prompt injection, off-topic requests, obvious policy violations, malformed or abusive traffic</td>
+          <td>Regex, keyword/rule filters, topic allowlist, cheap classifiers</td>
+          <td><span class="tag fast">Fast</span> usually no extra LLM call</td>
+          <td>False positives block legitimate users before the model can help</td>
+        </tr>
+        <tr>
+          <td><strong>LLM rail</strong></td>
+          <td>Subtle safety judgments, ambiguity, quality scoring, hallucination or unsafe intent not obvious from rules alone</td>
+          <td>Judge model score, structured policy rubric, confidence threshold</td>
+          <td><span class="tag slow">Slower</span> adds one or more model calls</td>
+          <td>High cost and latency if used on every request</td>
+        </tr>
+        <tr>
+          <td><strong>Output rail</strong></td>
+          <td>PII leakage, secret leakage, unsafe instructions, formatting constraints, banned content in the final response</td>
+          <td>Pattern scan, redaction rules, moderation, LLM-as-judge on output text</td>
+          <td><span class="tag fast">Fast</span> for regex/redaction; <span class="tag slow">Slower</span> if model judging</td>
+          <td>Catches leakage late, after tokens were already generated</td>
+        </tr>
+        <tr>
+          <td><strong>HITL</strong></td>
+          <td>High-stakes or low-confidence actions, novel attacks, disputed decisions, sensitive transactions</td>
+          <td>Confidence score, risk score, amount threshold, repeated failures, anomaly flags</td>
+          <td><span class="tag slow">Slowest</span> human queue or manual review</td>
+          <td>Workflow bottlenecks if escalation thresholds are too low</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Routing rule of thumb</h2>
+    <ul>
+      <li>Put cheap, high-precision checks first.</li>
+      <li>Use LLM judging only where rules are too brittle.</li>
+      <li>Use output rails because some failures only appear after generation.</li>
+      <li>Reserve HITL for high-harm or low-confidence cases, not as a bandage for weak automation.</li>
+    </ul>
+
+    <div class="note">
+      <strong>Day-11 mapping:</strong> <code>src/guardrails/input_guardrails.py</code> should reject obvious attacks early; <code>src/guardrails/output_guardrails.py</code> should catch leakage or unsafe completions; <code>src/hitl/hitl.py</code> should handle the residual risky cases that automation should not auto-approve.
+    </div>
+
+    <p>Primary references: <a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/">OWASP Top 10 for LLM Applications</a>, <a href="https://developers.openai.com/cookbook/examples/how_to_use_guardrails">OpenAI guardrails cookbook</a>, <a href="https://developers.openai.com/api/docs/guides/safety-best-practices">OpenAI safety best practices</a>, <a href="https://docs.nvidia.com/nemo/guardrails/latest/home">NVIDIA NeMo Guardrails docs</a>.</p>
+  </main>
+</body>
+</html>

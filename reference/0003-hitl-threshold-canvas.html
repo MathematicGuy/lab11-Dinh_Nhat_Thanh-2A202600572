@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HITL Threshold Canvas</title>
+  <style>
+    :root {
+      --bg: #f3efe7;
+      --paper: #fffdfa;
+      --ink: #1c2730;
+      --muted: #5d6972;
+      --line: #d8cfbf;
+      --accent: #9b3a2d;
+      --soft: #efe5d4;
+    }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f8f4ec, #f1ede5);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    main {
+      max-width: 940px;
+      margin: 28px auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      padding: 30px;
+      box-shadow: 0 10px 28px rgba(28, 39, 48, 0.08);
+    }
+    h1, h2 { margin: 0 0 12px; line-height: 1.1; }
+    p, li, td, th { font-size: 16px; line-height: 1.55; }
+    table { width: 100%; border-collapse: collapse; margin: 18px 0; }
+    th, td { border: 1px solid var(--line); padding: 10px; vertical-align: top; text-align: left; }
+    th { background: var(--soft); }
+    .box {
+      border-left: 4px solid var(--accent);
+      background: #fbf3ed;
+      padding: 12px 14px;
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>HITL Threshold Canvas</h1>
+    <p>Use this to design one escalation rule at a time in the Day-11 banking agent.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>What to write</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Decision point</td>
+          <td>The exact step where the assistant must decide: allow, refuse, or escalate</td>
+        </tr>
+        <tr>
+          <td>Failure harm</td>
+          <td>What goes wrong if the model auto-decides incorrectly?</td>
+        </tr>
+        <tr>
+          <td>Trigger signal</td>
+          <td>Amount threshold, confidence score, anomaly flag, auth mismatch, policy score, repeated attack attempts</td>
+        </tr>
+        <tr>
+          <td>Default action</td>
+          <td>Allow, refuse, or ask clarifying questions before escalation</td>
+        </tr>
+        <tr>
+          <td>Escalation owner</td>
+          <td>Fraud analyst, support agent, compliance reviewer, or supervisor</td>
+        </tr>
+        <tr>
+          <td>Latency budget</td>
+          <td>How long can this user wait before trust drops or business impact rises?</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="box">
+      <strong>Rule:</strong> every HITL threshold should point to a specific harm. If you cannot name the harm, the threshold is probably arbitrary.
+    </div>
+  </main>
+</body>
+</html>

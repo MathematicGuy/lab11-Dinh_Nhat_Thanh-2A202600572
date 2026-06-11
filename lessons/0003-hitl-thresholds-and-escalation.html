@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 0003: HITL Thresholds and Escalation</title>
+  <style>
+    :root {
+      --paper: #fffdfa;
+      --ink: #16222b;
+      --muted: #56636d;
+      --line: #d8cfbf;
+      --accent: #a23d2e;
+      --accent2: #1f695b;
+      --soft: #efe5d4;
+      --warn: #fbf1ea;
+      --ok: #edf6f2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(223, 202, 161, 0.35), transparent 26%),
+        linear-gradient(180deg, #f8f3ea, #f2ede4);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    main {
+      max-width: 980px;
+      margin: 28px auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      padding: 38px 34px 54px;
+      box-shadow: 0 14px 34px rgba(22, 34, 43, 0.08);
+    }
+    h1, h2, h3 { line-height: 1.08; margin: 0 0 14px; }
+    h1 { font-size: 40px; }
+    h2 { font-size: 27px; margin-top: 28px; }
+    h3 { font-size: 21px; margin-top: 22px; }
+    p, li, td, th { font-size: 18px; line-height: 1.62; }
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .lede { color: var(--muted); max-width: 70ch; }
+    .panel, .rule, .good, .exercise, .answer {
+      padding: 16px 18px;
+      margin: 18px 0;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      background: #fcf9f1;
+    }
+    .rule {
+      border-left: 5px solid var(--accent);
+      background: var(--warn);
+    }
+    .good {
+      border-left: 5px solid var(--accent2);
+      background: var(--ok);
+    }
+    .exercise {
+      background: #eef6f3;
+      border: 1px solid #bfd9cf;
+    }
+    .answer {
+      background: #fff8ef;
+      border: 1px dashed #cfb28b;
+      margin-top: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--soft); }
+    code {
+      font-family: Consolas, monospace;
+      background: #f4eee2;
+      padding: 1px 4px;
+    }
+    .small { color: var(--muted); font-size: 15px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Lesson 0003</p>
+    <h1>HITL Thresholds and Escalation</h1>
+    <p class="lede">Today’s skill: decide when a banking assistant may answer automatically, when it should queue human review, and when it must escalate immediately.</p>
+
+    <div class="panel">
+      <strong>Repo link:</strong> this lesson maps directly onto <code>src/hitl/hitl.py</code>, where <code>ConfidenceRouter.route()</code> and the three HITL decision points are still unfinished.
+    </div>
+
+    <h2>The main mistake to avoid</h2>
+    <p>Do not treat confidence as the only signal. A response can be highly confident and still be the wrong thing to automate.</p>
+    <div class="rule">
+      <strong>Banking rule:</strong> confidence tells you how sure the model feels. <strong>Business risk tells you who should have final authority.</strong>
+    </div>
+
+    <h2>Use two axes, not one</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Axis</th>
+          <th>Question</th>
+          <th>Typical signal</th>
+          <th>Why it matters</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Model confidence</td>
+          <td>How likely is the draft answer correct and complete?</td>
+          <td>Judge score, retrieval confidence, structured policy score</td>
+          <td>Low confidence means the system may misunderstand or hallucinate</td>
+        </tr>
+        <tr>
+          <td>Business risk</td>
+          <td>What happens if this answer or action is wrong?</td>
+          <td>Action type, amount, account sensitivity, identity implications</td>
+          <td>High risk means automation should have less authority</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>How the Day-11 router should think</h2>
+    <ul>
+      <li><strong>High confidence + low risk</strong>: auto-send.</li>
+      <li><strong>Medium confidence + low/medium risk</strong>: queue for review.</li>
+      <li><strong>Low confidence</strong>: escalate.</li>
+      <li><strong>Any high-risk action</strong>: escalate regardless of confidence.</li>
+    </ul>
+
+    <div class="good">
+      This is why the existing <code>HIGH_RISK_ACTIONS</code> list matters. It is not a convenience list. It is the mechanism that lets business risk override confidence.
+    </div>
+
+    <h2>Three HITL models in plain language</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>What it means</th>
+          <th>When to use it</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Human-in-the-loop</td>
+          <td>The human must approve before the system completes the action</td>
+          <td>Money transfer, account closure, credential reset, personal-data update</td>
+        </tr>
+        <tr>
+          <td>Human-on-the-loop</td>
+          <td>The system can act, but a reviewer monitors or samples cases</td>
+          <td>Medium-confidence FAQs, customer-support drafts, low-stakes advice</td>
+        </tr>
+        <tr>
+          <td>Human-as-tiebreaker</td>
+          <td>The human resolves ambiguous or disputed cases</td>
+          <td>Fraud disputes, conflicting signals, policy edge cases</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Concrete decision points for this repo</h2>
+    <h3>1. Large-value transfer or irreversible action</h3>
+    <p><strong>Trigger:</strong> action type is transfer, account closure, password change, or data update. <strong>Model:</strong> human-in-the-loop. <strong>Why:</strong> a wrong action causes immediate harm.</p>
+
+    <h3>2. Ambiguous answer quality</h3>
+    <p><strong>Trigger:</strong> confidence between 0.70 and 0.89 for a normal banking query. <strong>Model:</strong> human-on-the-loop. <strong>Why:</strong> the answer may be usable, but should be reviewed before reaching the customer.</p>
+
+    <h3>3. Fraud or disputed-account event</h3>
+    <p><strong>Trigger:</strong> request implies investigation, reimbursement, or customer harm claim. <strong>Model:</strong> human-as-tiebreaker or human-in-the-loop. <strong>Why:</strong> the case may be legitimate, but policy and evidence review matter more than confidence.</p>
+
+    <h2>What a reviewer needs to see</h2>
+    <p>Escalation is only useful if the reviewer receives enough context to decide quickly:</p>
+    <ul>
+      <li>original user request</li>
+      <li>draft answer or proposed action</li>
+      <li>confidence score</li>
+      <li>action type</li>
+      <li>which guardrails fired, if any</li>
+      <li>supporting context such as amount, destination, or suspicious markers</li>
+    </ul>
+
+    <h2>Practice</h2>
+    <div class="exercise">
+      <strong>Classify the route:</strong>
+      <ol>
+        <li>"What is the current savings interest rate?" with confidence <code>0.94</code></li>
+        <li>"Please transfer 250,000,000 VND to this new account" with confidence <code>0.97</code></li>
+        <li>"I think someone stole money from my account last night" with confidence <code>0.88</code></li>
+      </ol>
+      <div class="answer">
+        <strong>Suggested reasoning:</strong>
+        <ol>
+          <li><strong>auto_send</strong>, because the risk is low and confidence is high.</li>
+          <li><strong>escalate</strong>, because high-risk action overrides confidence.</li>
+          <li><strong>escalate</strong> or at least human-as-tiebreaker, because fraud disputes are high-stakes and evidence-sensitive.</li>
+        </ol>
+      </div>
+    </div>
+
+    <h2>What to remember</h2>
+    <ul>
+      <li>Confidence thresholds help with quality control.</li>
+      <li>Risk thresholds decide authority boundaries.</li>
+      <li>High-risk actions should not be auto-approved just because the model sounds certain.</li>
+      <li>Good HITL design is not "send everything to humans." It is selective escalation with enough reviewer context.</li>
+    </ul>
+
+    <p class="small">Open the companion matrix in <code>reference/0003-hitl-threshold-matrix.html</code>. Ask follow-up questions if you want to turn these three decision points into the exact content for TODO 13.</p>
+
+    <p class="small">References: <a href="https://developers.openai.com/api/docs/guides/safety-best-practices">OpenAI Safety best practices</a>; <a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/">OWASP Top 10 for LLM Applications</a>; local repo files <code>README.md</code>, <code>assignment11_defense_pipeline.md</code>, and <code>src/hitl/hitl.py</code>.</p>
+  </main>
+</body>
+</html>
